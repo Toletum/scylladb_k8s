@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scylla-headless
+  labels:
+    app: scylla
+spec:
+  ports:
+  - port: 9042
+    name: cql
+  - port: 9160
+    name: thrift
+  - port: 10000
+    name: jmx
+  - port: 9180
+    name: rest-api
+  - port: 7000
+    name: gossip
+  selector:
+    app: scylla
+  clusterIP: None
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: scylla
+  labels:
+    app: scylla
+spec:
+  serviceName: scylla-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: scylla
+  template:
+    metadata:
+      labels:
+        app: scylla
+    spec:
+      containers:
+      - name: scylla
+        image: scylladb/scylla:latest
+        command:
+        - /docker-entrypoint.py
+        - --seeds=scylla-0.scylla-headless,scylla-1.scylla-headless,scylla-2.scylla-headless
+        ports:
+        - containerPort: 9042
+          name: cql
+        - containerPort: 9160
+          name: thrift
+        - containerPort: 10000
+          name: jmx
+        - containerPort: 9180
+          name: rest-api
+        - containerPort: 7000
+          name: gossip
+        volumeMounts:
+        - name: scylla-data
+          mountPath: /var/lib/scylla
+  volumeClaimTemplates:
+  - metadata:
+      name: scylla-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
