@@ -1,8 +1,14 @@
 minikube start --nodes 4
 
+kubectl create configmap scylla-config --from-file=scylla.yaml
+
 kubectl apply -f ScyllaDB.yaml
 
+kubectl logs -f scylla-0
+
 kubectl exec -ti scylla-0 -- nodetool status
+
+kubectl exec -ti scylla-0 -- bash
 
 kubectl exec -ti scylla-0 -- cqlsh
 
@@ -19,4 +25,5 @@ INSERT INTO users (id, name, email) VALUES (uuid(), 'John Doe', 'john@example.co
 
 SELECT * FROM users;
 
+exit
 

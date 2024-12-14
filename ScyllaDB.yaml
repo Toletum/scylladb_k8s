@@ -6,19 +6,20 @@ metadata:
     app: scylla
 spec:
   ports:
-  - port: 9042
-    name: cql
-  - port: 9160
-    name: thrift
-  - port: 10000
-    name: jmx
-  - port: 9180
-    name: rest-api
-  - port: 7000
-    name: gossip
+    - port: 9042
+      name: cql
+    - port: 9160
+      name: thrift
+    - port: 10000
+      name: jmx
+    - port: 9180
+      name: rest-api
+    - port: 7000
+      name: gossip
   selector:
     app: scylla
   clusterIP: None
+  publishNotReadyAddresses: true
 
 ---
 apiVersion: apps/v1
@@ -39,30 +40,39 @@ spec:
         app: scylla
     spec:
       containers:
-      - name: scylla
-        image: scylladb/scylla:latest
-        command:
-        - /docker-entrypoint.py
-        - --seeds=scylla-0.scylla-headless,scylla-1.scylla-headless,scylla-2.scylla-headless
-        ports:
-        - containerPort: 9042
-          name: cql
-        - containerPort: 9160
-          name: thrift
-        - containerPort: 10000
-          name: jmx
-        - containerPort: 9180
-          name: rest-api
-        - containerPort: 7000
-          name: gossip
-        volumeMounts:
-        - name: scylla-data
-          mountPath: /var/lib/scylla
+        - name: scylla
+          image: scylladb/scylla:latest
+          command:
+            - /docker-entrypoint.py
+            - --seeds=scylla-0.scylla-headless,scylla-1.scylla-headless,scylla-2.scylla-headless
+          ports:
+            - containerPort: 9042
+              name: cql
+            - containerPort: 9160
+              name: thrift
+            - containerPort: 10000
+              name: jmx
+            - containerPort: 9180
+              name: rest-api
+            - containerPort: 7000
+              name: gossip
+          volumeMounts:
+            - name: scylla-data
+              mountPath: /var/lib/scylla
+            - name: scylla-config
+              mountPath: /etc/scylla/scylla.yaml
+              subPath: scylla.yaml
+      volumes:
+        - name: scylla-config
+          configMap:
+            name: scylla-config
   volumeClaimTemplates:
-  - metadata:
-      name: scylla-data
-    spec:
-      accessModes: ["ReadWriteOnce"]
-      resources:
-        requests:
-          storage: 10Gi
+    - metadata:
+        name: scylla-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 10Gi
+        storageClassName: standard
+        volumeMode: Filesystem
